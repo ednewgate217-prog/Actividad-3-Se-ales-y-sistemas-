@@ -1,0 +1,265 @@
+"" 
+# Filtros Digitales — Actividad Formativa 3
+
+Repositorio con la implementación de filtros digitales pasa bajos, pasa altos
+y pasa bandas utilizando Python y SciPy.
+
+## Propósito
+Diseñar y evaluar filtros Butterworth de cuarto orden sobre señales sintéticas
+con ruido e interferencias, analizando su respuesta en frecuencia y su efecto
+en el dominio del tiempo.
+
+## Dependencias
+- Python 3.11+
+- NumPy
+- SciPy
+- Matplotlib
+
+Instalación:
+```bash
+pip install numpy scipy matplotlib
+""
+
+
+""src/lowpass_butterworth.py — Filtro pasa bajos
+""
+
+"""
+Filtro pasa bajos Butterworth de cuarto orden.
+Señal de prueba: componente de 10 Hz + ruido blanco gaussiano.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
+
+# ---------------------------------------------------------
+# 1. Definición de la señal de entrada
+# ---------------------------------------------------------
+fs = 1000.0          # Frecuencia de muestreo (Hz)
+t = np.arange(0, 2.0, 1/fs)   # Vector de tiempo (2 segundos)
+
+f_util = 10.0        # Componente útil (Hz)
+senal_util = np.sin(2 * np.pi * f_util * t)
+
+ruido = 0.5 * np.random.randn(len(t))   # Ruido blanco gaussiano
+senal = senal_util + ruido
+
+# ---------------------------------------------------------
+# 2. Diseño del filtro
+# ---------------------------------------------------------
+fc = 30.0            # Frecuencia de corte (Hz)
+orden = 4            # Orden del filtro
+
+sos = signal.butter(N=orden, Wn=fc, btype='low', fs=fs, output='sos')
+
+# ---------------------------------------------------------
+# 3. Aplicación del filtro a la señal
+# ---------------------------------------------------------
+senal_filtrada = signal.sosfiltfilt(sos, senal)
+
+# ---------------------------------------------------------
+# 4. Visualización de los resultados
+# ---------------------------------------------------------
+fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+
+ax[0].plot(t, senal, color='gray', label='Señal con ruido')
+ax[0].plot(t, senal_util, 'g--', linewidth=1.5, label='Componente útil (10 Hz)')
+ax[0].set_title('Señal original')
+ax[0].set_xlabel('Tiempo (s)')
+ax[0].set_ylabel('Amplitud')
+ax[0].legend()
+ax[0].grid(True)
+
+ax[1].plot(t, senal_filtrada, color='blue', label='Señal filtrada (LP 30 Hz)')
+ax[1].plot(t, senal_util, 'g--', linewidth=1.5, label='Componente útil (10 Hz)')
+ax[1].set_title('Señal después del filtro pasa bajos')
+ax[1].set_xlabel('Tiempo (s)')
+ax[1].set_ylabel('Amplitud')
+ax[1].legend()
+ax[1].grid(True)
+
+plt.tight_layout()
+plt.savefig('figures/lowpass_tiempo.png', dpi=150)
+plt.show()
+
+# ---------------------------------------------------------
+# Respuesta en frecuencia
+# ---------------------------------------------------------
+w, h = signal.sosfreqz(sos, worN=2048, fs=fs)
+magnitud_db = 20 * np.log10(np.abs(h) + 1e-12)
+
+plt.figure(figsize=(8, 4))
+plt.plot(w, magnitud_db)
+plt.axvline(fc, color='r', linestyle='--', label=f'fc = {fc} Hz')
+plt.axhline(-3, color='k', linestyle=':', label='-3 dB')
+plt.title('Respuesta en frecuencia — Pasa bajos Butterworth orden 4')
+plt.xlabel('Frecuencia (Hz)')
+plt.ylabel('Magnitud (dB)')
+plt.xlim(0, 200)
+plt.ylim(-80, 5)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig('figures/lowpass_frecuencia.png', dpi=150)
+plt.show()
+
+
+""src/highpass_butterworth.py — Filtro pasa altos""
+
+"""
+Filtro pasa altos Butterworth de cuarto orden.
+Señal de prueba: 10 Hz + 200 Hz.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
+
+# ---------------------------------------------------------
+# 1. Definición de la señal de entrada
+# ---------------------------------------------------------
+fs = 1000.0
+t = np.arange(0, 2.0, 1/fs)
+
+f_baja = 10.0
+f_alta = 200.0
+senal = np.sin(2 * np.pi * f_baja * t) + np.sin(2 * np.pi * f_alta * t)
+
+# ---------------------------------------------------------
+# 2. Diseño del filtro
+# ---------------------------------------------------------
+fc = 150.0
+orden = 4
+
+sos = signal.butter(N=orden, Wn=fc, btype='high', fs=fs, output='sos')
+
+# ---------------------------------------------------------
+# 3. Aplicación del filtro a la señal
+# ---------------------------------------------------------
+senal_filtrada = signal.sosfiltfilt(sos, senal)
+
+# ---------------------------------------------------------
+# 4. Visualización de los resultados
+# ---------------------------------------------------------
+fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+
+ax[0].plot(t, senal, color='gray')
+ax[0].set_title('Señal original (10 Hz + 200 Hz)')
+ax[0].set_xlabel('Tiempo (s)')
+ax[0].set_ylabel('Amplitud')
+ax[0].grid(True)
+
+ax[1].plot(t, senal_filtrada, color='darkorange', label='Señal filtrada (HP 150 Hz)')
+ax[1].set_title('Señal después del filtro pasa altos')
+ax[1].set_xlabel('Tiempo (s)')
+ax[1].set_ylabel('Amplitud')
+ax[1].legend()
+ax[1].grid(True)
+
+plt.tight_layout()
+plt.savefig('figures/highpass_tiempo.png', dpi=150)
+plt.show()
+
+# ---------------------------------------------------------
+# Respuesta en frecuencia
+# ---------------------------------------------------------
+w, h = signal.sosfreqz(sos, worN=2048, fs=fs)
+magnitud_db = 20 * np.log10(np.abs(h) + 1e-12)
+
+plt.figure(figsize=(8, 4))
+plt.plot(w, magnitud_db)
+plt.axvline(fc, color='r', linestyle='--', label=f'fc = {fc} Hz')
+plt.axhline(-3, color='k', linestyle=':', label='-3 dB')
+plt.title('Respuesta en frecuencia — Pasa altos Butterworth orden 4')
+plt.xlabel('Frecuencia (Hz)')
+plt.ylabel('Magnitud (dB)')
+plt.xlim(0, 400)
+plt.ylim(-80, 5)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig('figures/highpass_frecuencia.png', dpi=150)
+plt.show()
+
+
+""src/bandpass_butterworth.py — Filtro pasa bandas""
+
+"""
+Filtro pasa bandas Butterworth de cuarto orden.
+Señal de prueba: 10 Hz + 100 Hz + 300 Hz.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
+
+# ---------------------------------------------------------
+# 1. Definición de la señal de entrada
+# ---------------------------------------------------------
+fs = 1000.0
+t = np.arange(0, 2.0, 1/fs)
+
+senal = (np.sin(2 * np.pi * 10 * t)
+         + np.sin(2 * np.pi * 100 * t)
+         + np.sin(2 * np.pi * 300 * t))
+
+# ---------------------------------------------------------
+# 2. Diseño del filtro
+# ---------------------------------------------------------
+f_lo = 80.0
+f_hi = 120.0
+orden = 4
+
+sos = signal.butter(N=orden, Wn=[f_lo, f_hi], btype='band', fs=fs, output='sos')
+
+# ---------------------------------------------------------
+# 3. Aplicación del filtro a la señal
+# ---------------------------------------------------------
+senal_filtrada = signal.sosfiltfilt(sos, senal)
+
+# ---------------------------------------------------------
+# 4. Visualización de los resultados
+# ---------------------------------------------------------
+fig, ax = plt.subplots(2, 1, figsize=(10, 6))
+
+ax[0].plot(t, senal, color='gray')
+ax[0].set_title('Señal original (10 Hz + 100 Hz + 300 Hz)')
+ax[0].set_xlabel('Tiempo (s)')
+ax[0].set_ylabel('Amplitud')
+ax[0].grid(True)
+
+ax[1].plot(t, senal_filtrada, color='purple', label='Señal filtrada (BP 80–120 Hz)')
+ax[1].set_title('Señal después del filtro pasa bandas')
+ax[1].set_xlabel('Tiempo (s)')
+ax[1].set_ylabel('Amplitud')
+ax[1].legend()
+ax[1].grid(True)
+
+plt.tight_layout()
+plt.savefig('figures/bandpass_tiempo.png', dpi=150)
+plt.show()
+
+# ---------------------------------------------------------
+# Respuesta en frecuencia
+# ---------------------------------------------------------
+w, h = signal.sosfreqz(sos, worN=2048, fs=fs)
+magnitud_db = 20 * np.log10(np.abs(h) + 1e-12)
+
+plt.figure(figsize=(8, 4))
+plt.plot(w, magnitud_db)
+plt.axvline(f_lo, color='r', linestyle='--', label=f'f_lo = {f_lo} Hz')
+plt.axvline(f_hi, color='r', linestyle='--', label=f'f_hi = {f_hi} Hz')
+plt.axhline(-3, color='k', linestyle=':', label='-3 dB')
+plt.title('Respuesta en frecuencia — Pasa bandas Butterworth orden 4')
+plt.xlabel('Frecuencia (Hz)')
+plt.ylabel('Magnitud (dB)')
+plt.xlim(0, 400)
+plt.ylim(-80, 5)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig('figures/bandpass_frecuencia.png', dpi=150)
+plt.show()
+
+
